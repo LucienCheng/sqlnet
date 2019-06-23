@@ -4,7 +4,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
 import numpy as np
-from net_utils import run_lstm, col_name_encode
+from .net_utils import run_lstm, col_name_encode
 
 class SelNumPredictor(nn.Module):
     def __init__(self, N_word, N_h, N_depth, use_ca):
@@ -12,7 +12,7 @@ class SelNumPredictor(nn.Module):
         self.N_h = N_h
         self.use_ca = use_ca
 
-        self.sel_num_lstm = nn.LSTM(input_size=N_word, hidden_size=N_h/2,
+        self.sel_num_lstm = nn.LSTM(input_size=N_word, hidden_size=N_h//2,
                                     num_layers=N_depth, batch_first=True,
                                     dropout=0.3, bidirectional=True)
         self.sel_num_att = nn.Linear(N_h, 1)
@@ -25,7 +25,7 @@ class SelNumPredictor(nn.Module):
 
 
         if self.use_ca:
-            print "Using column attention on select number predicting"
+            print ("Using column attention on select number predicting")
 
     def forward(self, x_emb_var, x_len, col_inp_var, col_name_len, col_len, col_num):
         B = len(x_len)
@@ -42,8 +42,8 @@ class SelNumPredictor(nn.Module):
                 num_col_att_val[idx, num:] = -1000000
         num_col_att = self.softmax(num_col_att_val)
         K_num_col = (e_num_col * num_col_att.unsqueeze(2)).sum(1)
-        sel_num_h1 = self.sel_num_col2hid1(K_num_col).view(B, 4, self.N_h/2).transpose(0,1).contiguous()
-        sel_num_h2 = self.sel_num_col2hid2(K_num_col).view(B, 4, self.N_h/2).transpose(0,1).contiguous()
+        sel_num_h1 = self.sel_num_col2hid1(K_num_col).view(B, 4, self.N_h//2).transpose(0,1).contiguous()
+        sel_num_h2 = self.sel_num_col2hid2(K_num_col).view(B, 4, self.N_h//2).transpose(0,1).contiguous()
 
         h_num_enc, _ = run_lstm(self.sel_num_lstm, x_emb_var, x_len,
                                 hidden=(sel_num_h1, sel_num_h2))
